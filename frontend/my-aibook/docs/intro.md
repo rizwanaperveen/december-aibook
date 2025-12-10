@@ -2,46 +2,33 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Introduction to Embodied AI Systems
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Welcome to the **Embodied AI Systems Book**, where you'll learn about building intelligent robotic systems that interact with the physical world.
+
+## About This Book
+
+This comprehensive guide covers two fundamental aspects of embodied AI:
+
+- **Module 1**: Robotic Nervous System (ROS 2) - Learn about ROS 2 Nodes, Topics, Services, rclpy agent-to-ROS bridge, and URDF basics for humanoid robots
+- **Module 2**: Digital Twin (Gazebo + Unity) - Explore physics simulation, Unity rendering, HRI, and sensor simulation including LiDAR, Camera, and IMU
 
 ## Getting Started
 
-Get started by **creating a new site**.
+This book is designed to take you from beginner to advanced concepts in embodied AI systems. Each module builds on the previous knowledge while providing hands-on examples and practical applications.
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+## What You'll Learn
 
-### What you'll need
+- How to design and implement robotic control systems using ROS 2
+- Techniques for creating digital twins with realistic physics simulation
+- Integration patterns between AI agents and robotic systems
+- Sensor fusion and perception for embodied systems
+- Human-robot interaction principles and implementation
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+## Prerequisites
 
-## Generate a new site
+- Basic programming knowledge (Python preferred)
+- Understanding of linear algebra and basic physics concepts
+- Familiarity with Linux command line (helpful but not required)
 
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+Let's begin your journey into the fascinating world of embodied AI systems!

@@ -1,0 +1,30 @@
+{
+  "name": "embodied-ai-systems-book",
+  "version": "1.0.0",
+  "description": "A comprehensive educational platform for learning about embodied AI systems, featuring a Docusaurus-based book with integrated RAG chatbot functionality.",
+  "scripts": {
+    "install-frontend": "cd frontend/my-aibook && npm install",
+    "start-frontend": "cd frontend/my-aibook && npm start",
+    "build-frontend": "cd frontend/my-aibook && npm run build",
+    "install-backend": "cd backend && pip install -r requirements.txt",
+    "start-backend": "cd backend && python -m uvicorn main:app --reload",
+    "populate-db": "cd backend && python populate_db.py",
+    "dev": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
+    "deploy": "bash deploy.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "keywords": [
+    "ai",
+    "embodied-ai",
+    "ros2",
+    "digital-twin",
+    "docusaurus",
+    "rag",
+    "chatbot",
+    "education"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

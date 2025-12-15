@@ -10,6 +10,7 @@ from fastembed import TextEmbedding
 import uuid
 import logging
 from datetime import datetime
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -35,13 +36,29 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Qdrant client
+qdrant_client = None
 try:
     qdrant_client = QdrantClient(
         url=os.getenv("QDRANT_URL"),
         api_key=os.getenv("QDRANT_API_KEY"),
         timeout=10
     )
-    logger.info("Successfully connected to Qdrant")
+
+    # Test the connection by trying to get collections
+    collections = qdrant_client.get_collections()
+    logger.info("Successfully connected to Qdrant and verified connection")
+
+    # Test if search method exists
+    if hasattr(qdrant_client, 'search'):
+        logger.info("Qdrant client has search capability (search method available)")
+    elif hasattr(qdrant_client, 'search_points'):
+        logger.info("Qdrant client has search capability (search_points method available)")
+    elif hasattr(qdrant_client, 'query_points'):
+        logger.info("Qdrant client has search capability (query_points method available)")
+    else:
+        logger.error("Qdrant client does not have required search methods")
+        qdrant_client = None
+
 except Exception as e:
     logger.error(f"Failed to connect to Qdrant: {e}")
     qdrant_client = None
@@ -53,6 +70,15 @@ try:
 except Exception as e:
     logger.error(f"Failed to load embedding model: {e}")
     embedding_model = None
+
+# Initialize Gemini API
+try:
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    gemini_model = genai.GenerativeModel('gemini-2.5-flash')  # Using gemini-2.5-flash which is available
+    logger.info("Successfully configured Gemini API with gemini-2.5-flash model")
+except Exception as e:
+    logger.error(f"Failed to configure Gemini API: {e}")
+    gemini_model = None
 
 # Define request/response models
 class ChatRequest(BaseModel):
@@ -129,18 +155,36 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail="Qdrant client not available")
     if not embedding_model:
         raise HTTPException(status_code=500, detail="Embedding model not available")
+    if not gemini_model:
+        raise HTTPException(status_code=500, detail="Gemini API not available")
 
     try:
+        # Check if collection exists
+        try:
+            qdrant_client.get_collection(collection_name=COLLECTION_NAME)
+            logger.info(f"Collection {COLLECTION_NAME} exists")
+        except Exception as e:
+            logger.error(f"Collection {COLLECTION_NAME} does not exist: {e}")
+            # Create collection if it doesn't exist
+            qdrant_client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=models.VectorParams(
+                    size=384,  # Size of BGE small embedding
+                    distance=models.Distance.COSINE
+                )
+            )
+            logger.info(f"Created Qdrant collection: {COLLECTION_NAME}")
+
         # If using selected text mode, use only the provided text
         if request.use_selected_text and request.selected_text:
-            # Generate response based only on selected text
-            response = f"Based on the selected text: {request.selected_text[:200]}..., here's the answer to your question about '{request.query}'."
-            citations = ["Selected Text Only"]
+            # Generate prompt for Gemini with selected text
+            prompt = f"Based on the following selected text: '{request.selected_text}', please answer this question: {request.query}"
+            citations = ["Selected Text"]
         else:
             # Perform semantic search in Qdrant
             query_embedding = list(embedding_model.embed([request.query]))[0]
 
-            # Check if the search method exists, otherwise try query (newer API)
+            # Use the appropriate search method based on Qdrant client version
             if hasattr(qdrant_client, 'search'):
                 search_results = qdrant_client.search(
                     collection_name=COLLECTION_NAME,
@@ -148,37 +192,62 @@ async def chat(request: ChatRequest):
                     limit=5,  # Get top 5 results
                     with_payload=True
                 )
-            else:
-                # For newer versions of Qdrant client, use query method
-                search_results = qdrant_client.query(
+            elif hasattr(qdrant_client, 'search_points'):
+                # For older versions of Qdrant client
+                search_results = qdrant_client.search_points(
                     collection_name=COLLECTION_NAME,
-                    query_vector=query_embedding.tolist(),  # Convert to list
+                    vector=query_embedding.tolist(),  # Convert to list
                     limit=5,  # Get top 5 results
                     with_payload=True
                 )
+            elif hasattr(qdrant_client, 'query_points'):
+                # For newer versions of Qdrant client
+                search_results = qdrant_client.query_points(
+                    collection_name=COLLECTION_NAME,
+                    query=query_embedding.tolist(),  # Convert to list
+                    limit=5,  # Get top 5 results
+                    with_payload=True
+                )
+            else:
+                raise Exception("Qdrant client does not have search capability")
 
             # Extract relevant content
             relevant_content = []
             citations = []
 
             for result in search_results:
-                if result.payload:
+                if hasattr(result, 'payload') and result.payload:
                     relevant_content.append(result.payload.get('text', ''))
                     # Create citation from module and chapter
                     module = result.payload.get('module', 'Unknown')
                     chapter = result.payload.get('chapter', 'Unknown')
                     citations.append(f"Module: {module}, Chapter: {chapter}")
+                elif isinstance(result, dict) and 'payload' in result:
+                    # For some versions, results might be dictionaries
+                    payload = result.get('payload', {})
+                    relevant_content.append(payload.get('text', ''))
+                    module = payload.get('module', 'Unknown')
+                    chapter = payload.get('chapter', 'Unknown')
+                    citations.append(f"Module: {module}, Chapter: {chapter}")
 
-            # Generate response based on retrieved content
+            # Generate prompt for Gemini with retrieved content
             if relevant_content:
-                context = " ".join(relevant_content[:3])  # Use top 3 results
-                response = f"Based on the book content: {context[:500]}..., here's the answer to your question about '{request.query}'."
+                context = "\n\n".join([f"Source: {citations[i]}\nContent: {content[:1000]}" for i, content in enumerate(relevant_content[:3])])  # Use top 3 results with citations
+                prompt = f"Based on the following book content, please answer the question. If the content doesn't contain the answer, say so clearly.\n\n{context}\n\nQuestion: {request.query}"
             else:
-                response = f"I couldn't find relevant information in the book about '{request.query}'. Please check other chapters or ask a different question."
+                prompt = f"The user asked: '{request.query}'. I couldn't find relevant information in the book. Please acknowledge this and suggest they check other chapters or ask a different question."
                 citations = []
 
+        # Generate response using Gemini
+        try:
+            response = gemini_model.generate_content(prompt)
+            response_text = response.text if response.text else "I couldn't generate a response. Please try again."
+        except Exception as e:
+            logger.error(f"Error calling Gemini API: {e}")
+            response_text = f"Sorry, I encountered an error generating a response. Please try again later. Error: {str(e)}"
+
         return ChatResponse(
-            response=response,
+            response=response_text,
             citations=citations,
             query=request.query,
             timestamp=datetime.utcnow()
@@ -219,7 +288,7 @@ async def retrieve_content(request: Dict[str, Any]):
     try:
         query_embedding = list(embedding_model.embed([query]))[0]
 
-        # Check if the search method exists, otherwise try query (newer API)
+        # Use the appropriate search method based on Qdrant client version
         if hasattr(qdrant_client, 'search'):
             search_results = qdrant_client.search(
                 collection_name=COLLECTION_NAME,
@@ -227,14 +296,16 @@ async def retrieve_content(request: Dict[str, Any]):
                 limit=request.get("limit", 5),
                 with_payload=True
             )
-        else:
-            # For newer versions of Qdrant client, use query method
-            search_results = qdrant_client.query(
+        elif hasattr(qdrant_client, 'search_points'):
+            # For older versions of Qdrant client
+            search_results = qdrant_client.search_points(
                 collection_name=COLLECTION_NAME,
-                query_vector=query_embedding.tolist(),  # Convert to list
+                vector=query_embedding.tolist(),  # Convert to list
                 limit=request.get("limit", 5),
                 with_payload=True
             )
+        else:
+            raise Exception("Qdrant client does not have search capability")
 
         results = []
         for result in search_results:
@@ -293,6 +364,42 @@ async def add_document(doc: Document):
     except Exception as e:
         logger.error(f"Error in add_document endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Error adding document: {str(e)}")
+
+
+@app.post("/gemini_chat")
+async def gemini_chat(request: ChatRequest):
+    """Chat endpoint using Gemini API with book content context"""
+    logger.info(f"Received Gemini query: {request.query[:50]}...")
+
+    if not gemini_model:
+        raise HTTPException(status_code=500, detail="Gemini API not available")
+
+    try:
+        # For now, we'll use a simple approach. In a real implementation, you'd want to:
+        # 1. Search your book content for relevant information
+        # 2. Pass that context to the Gemini API
+
+        # Placeholder context - in real implementation, you'd retrieve relevant content from your book
+        context = "The Embodied AI Systems Book covers topics like ROS 2, Digital Twins, Gazebo, Unity, and robotics."
+
+        if request.use_selected_text and request.selected_text:
+            prompt = f"Based on the following selected text: '{request.selected_text}', please answer this question: {request.query}"
+            citations = ["Selected Text"]
+        else:
+            prompt = f"Based on the following book content, please answer the question. If the content doesn't contain the answer, say so clearly.\n\n{context}\n\nQuestion: {request.query}"
+            citations = ["Embodied AI Systems Book"]
+
+        response = gemini_model.generate_content(prompt)
+
+        return ChatResponse(
+            response=response.text,
+            citations=citations,
+            query=request.query,
+            timestamp=datetime.utcnow()
+        )
+    except Exception as e:
+        logger.error(f"Error in Gemini chat endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/")
 async def root():

@@ -1,17 +1,17 @@
 .chatbot-container {
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 500px;
   max-width: 100%;
-  background-color: white;
+  background-color: rgb(26, 20, 20);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .chatbot-header {
-  background-color: #2563eb;
+  background-color: #050a16;
   color: white;
   padding: 12px 16px;
   display: flex;
@@ -40,7 +40,7 @@
 
 .selected-text-preview {
   font-size: 11px;
-  color: #ccc;
+  color: #cc1653;
   max-width: 200px;
   text-overflow: ellipsis;
   overflow: hidden;

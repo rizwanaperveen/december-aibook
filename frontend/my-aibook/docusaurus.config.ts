@@ -27,7 +27,10 @@ const config: Config = {
   deploymentBranch: 'gh-pages', // The branch to deploy to
   trailingSlash: false, // Set to false to remove trailing slashes
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
+
+  // Static files to be served
+  staticDirectories: ['static'],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -92,7 +95,7 @@ const config: Config = {
         {to: '/chat', label: 'AI Assistant', position: 'left'},
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/your-username/embodied-ai-book',
+          href: 'https://github.com/rizwanaperveen/december-aibook',
           label: 'GitHub',
           position: 'right',
         },
@@ -124,7 +127,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/your-username/embodied-ai-book',
+              href: 'https://github.com/rizwanaperveen/december-aibook',
             },
             {
               label: 'Docusaurus',
@@ -138,10 +141,6 @@ const config: Config = {
             {
               label: 'Blog',
               to: '/blog',
-            },
-            {
-              label: 'Contact',
-              href: '/contact',
             },
           ],
         },

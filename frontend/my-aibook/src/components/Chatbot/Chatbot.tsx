@@ -67,12 +67,13 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Prepare the request based on mode
+      // Prepare the request payload
       const requestBody: any = {
         query: inputValue,
-        use_selected_text: useSelectedTextMode && selectedText !== null,
+        use_selected_text: useSelectedTextMode && selectedText ? true : false,
       };
 
+      // Include selected text if in selected text mode
       if (useSelectedTextMode && selectedText) {
         requestBody.selected_text = selectedText;
       }
@@ -103,11 +104,11 @@ const Chatbot: React.FC = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error calling chat API:', error);
+      console.error('Error calling backend API:', error);
 
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        content: 'Sorry, I encountered an error processing your request. Please make sure the backend server is running on port 8000.',
         role: 'assistant',
         timestamp: new Date(),
       };
@@ -125,7 +126,7 @@ const Chatbot: React.FC = () => {
   return (
     <div className="chatbot-container">
       <div className="chatbot-header">
-        <h3>AI Assistant</h3>
+        <h3>AI Assistant (RAG with Qdrant)</h3>
         <div className="chatbot-mode-toggle">
           <label>
             <input
@@ -149,7 +150,7 @@ const Chatbot: React.FC = () => {
           <div
             key={message.id}
             className={`message ${message.role}`}
-            title={message.timestamp.toLocaleString()}
+            title={message.timestamp ? message.timestamp.toLocaleString() : new Date().toLocaleString()}
           >
             <div className="message-content">
               {message.content}

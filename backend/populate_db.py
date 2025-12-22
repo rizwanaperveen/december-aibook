@@ -70,7 +70,18 @@ def get_module_from_path(file_path: Path) -> str:
     """
     Determine the module based on the file path
     """
-    if 'ros2' in file_path.name.lower() or 'basics' in file_path.name.lower():
+    # Convert all parent directory names to lowercase for comparison
+    parent_dirs = [part.lower() for part in file_path.parent.parts]
+
+    if 'module-1' in parent_dirs or 'module1' in parent_dirs:
+        return "Module 1: Robotic Nervous System (ROS 2)"
+    elif 'module-2' in parent_dirs or 'module2' in parent_dirs:
+        return "Module 2: Digital Twin (Gazebo + Unity)"
+    elif 'module-3' in parent_dirs or 'module3' in parent_dirs:
+        return "Module 3: The AI-Robot Brain (NVIDIA Isaac)"
+    elif 'module-4' in parent_dirs or 'module4' in parent_dirs:
+        return "Module 4: Vision-Language-Action (VLA)"
+    elif 'ros2' in file_path.name.lower() or 'basics' in file_path.name.lower():
         return "Module 1: Robotic Nervous System (ROS 2)"
     elif 'digital' in file_path.name.lower() or 'twin' in file_path.name.lower():
         return "Module 2: Digital Twin (Gazebo + Unity)"
@@ -112,8 +123,8 @@ def populate_qdrant():
         print(f"Docs path not found: {docs_path}")
         return
 
-    # Process each markdown file in the docs directory
-    md_files = list(docs_path.glob("*.md"))
+    # Process each markdown file in the docs directory and subdirectories
+    md_files = list(docs_path.rglob("*.md"))
     print(f"Found {len(md_files)} markdown files to process")
 
     total_chunks = 0

@@ -7,10 +7,10 @@ from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from fastembed import TextEmbedding
-import uuid
 import logging
 from datetime import datetime
 import google.generativeai as genai
+from models import ChatRequest, ChatResponse, Document, HealthResponse, RetrieveRequest, RetrieveResponse
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +36,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Qdrant client
-qdrant_client = None
+qdrant_client =  QdrantClient(
+    url="https://5cd470e3-3bc7-4d1d-a4fa-62acdc409c14.us-east4-0.gcp.cloud.qdrant.io:6333", 
+    api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.sOr7D8BLU1miK8ORKqD--6EiJokUKvN89XFIzBYsEuI",
+)
 try:
     qdrant_client = QdrantClient(
         url=os.getenv("QDRANT_URL"),
@@ -80,29 +83,6 @@ except Exception as e:
     logger.error(f"Failed to configure Gemini API: {e}")
     gemini_model = None
 
-# Define request/response models
-class ChatRequest(BaseModel):
-    query: str = Field(..., min_length=1, max_length=1000)
-    use_selected_text: bool = False
-    selected_text: Optional[str] = None
-
-class ChatResponse(BaseModel):
-    response: str
-    citations: List[str]
-    query: str
-    timestamp: datetime
-
-class Document(BaseModel):
-    id: str
-    module: str
-    chapter: str
-    anchor: Optional[str] = None
-    text: str
-    qdrant_id: Optional[str] = None
-
-class HealthResponse(BaseModel):
-    status: str
-    timestamp: datetime
 
 # Collection name for Qdrant
 COLLECTION_NAME = "embodied_ai_book"
@@ -202,12 +182,14 @@ async def chat(request: ChatRequest):
                 )
             elif hasattr(qdrant_client, 'query_points'):
                 # For newer versions of Qdrant client
-                search_results = qdrant_client.query_points(
+                search_results_response = qdrant_client.query_points(
                     collection_name=COLLECTION_NAME,
                     query=query_embedding.tolist(),  # Convert to list
                     limit=5,  # Get top 5 results
                     with_payload=True
                 )
+                # Extract points from the response object
+                search_results = search_results_response.points
             else:
                 raise Exception("Qdrant client does not have search capability")
 
@@ -216,16 +198,24 @@ async def chat(request: ChatRequest):
             citations = []
 
             for result in search_results:
+                # Handle different result formats from various Qdrant client methods
                 if hasattr(result, 'payload') and result.payload:
-                    relevant_content.append(result.payload.get('text', ''))
-                    # Create citation from module and chapter
-                    module = result.payload.get('module', 'Unknown')
-                    chapter = result.payload.get('chapter', 'Unknown')
-                    citations.append(f"Module: {module}, Chapter: {chapter}")
+                    # For query_points and search results
+                    payload = result.payload
                 elif isinstance(result, dict) and 'payload' in result:
-                    # For some versions, results might be dictionaries
+                    # For some response formats
                     payload = result.get('payload', {})
-                    relevant_content.append(payload.get('text', ''))
+                elif hasattr(result, 'dict') and callable(getattr(result, 'dict')):
+                    # For ScoredPoint objects
+                    result_dict = result.dict() if hasattr(result, 'dict') else result.__dict__
+                    payload = result_dict.get('payload', {})
+                else:
+                    # Fallback
+                    payload = getattr(result, 'payload', {}) if hasattr(result, 'payload') else {}
+
+                text_content = payload.get('text', '')
+                if text_content:  # Only add non-empty content
+                    relevant_content.append(text_content)
                     module = payload.get('module', 'Unknown')
                     chapter = payload.get('chapter', 'Unknown')
                     citations.append(f"Module: {module}, Chapter: {chapter}")
@@ -273,15 +263,15 @@ async def embed_text(request: Dict[str, Any]):
         logger.error(f"Error in embed endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating embeddings: {str(e)}")
 
-@app.post("/retrieve")
-async def retrieve_content(request: Dict[str, Any]):
+@app.post("/retrieve", response_model=RetrieveResponse)
+async def retrieve_content(request: RetrieveRequest):
     """Endpoint to retrieve similar content from Qdrant"""
     if not qdrant_client:
         raise HTTPException(status_code=500, detail="Qdrant client not available")
     if not embedding_model:
         raise HTTPException(status_code=500, detail="Embedding model not available")
 
-    query = request.get("query", "")
+    query = request.query
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
 
@@ -293,7 +283,7 @@ async def retrieve_content(request: Dict[str, Any]):
             search_results = qdrant_client.search(
                 collection_name=COLLECTION_NAME,
                 query_vector=query_embedding.tolist(),  # Convert to list
-                limit=request.get("limit", 5),
+                limit=request.limit,
                 with_payload=True
             )
         elif hasattr(qdrant_client, 'search_points'):
@@ -301,7 +291,7 @@ async def retrieve_content(request: Dict[str, Any]):
             search_results = qdrant_client.search_points(
                 collection_name=COLLECTION_NAME,
                 vector=query_embedding.tolist(),  # Convert to list
-                limit=request.get("limit", 5),
+                limit=request.limit,
                 with_payload=True
             )
         else:
@@ -317,7 +307,7 @@ async def retrieve_content(request: Dict[str, Any]):
                 "score": result.score
             })
 
-        return {"results": results}
+        return RetrieveResponse(results=results)
     except Exception as e:
         logger.error(f"Error in retrieve endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving content: {str(e)}")

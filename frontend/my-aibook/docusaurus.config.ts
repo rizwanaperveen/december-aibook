@@ -15,15 +15,15 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-username.github.io',
+  url: 'https://rizwanaperveen.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/embodied-ai-book/',
+  baseUrl: '/december-aibook/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'your-username', // Usually your GitHub org/user name.
-  projectName: 'embodied-ai-book', // Usually your repo name.
+  organizationName: 'rizwanaperveen', // Usually your GitHub org/user name.
+  projectName: 'december-aibook', // Usually your repo name.
   deploymentBranch: 'gh-pages', // The branch to deploy to
   trailingSlash: false, // Set to false to remove trailing slashes
 

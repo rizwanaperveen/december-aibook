@@ -14,14 +14,11 @@ echo "Building the Docusaurus site..."
 npm install
 npm run build
 
-# Navigate back to the root
-cd ../..
-
 # Configure git user
 git config --global user.name "GitHub Actions"
 git config --global user.email "actions@github.com"
 
-# Deploy to GitHub Pages
+# Deploy to GitHub Pages using npx
 echo "Deploying to GitHub Pages..."
 npx docusaurus deploy
 

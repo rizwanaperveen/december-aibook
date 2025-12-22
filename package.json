@@ -10,7 +10,8 @@
     "start-backend": "cd backend && python -m uvicorn main:app --reload",
     "populate-db": "cd backend && python populate_db.py",
     "dev": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash deploy.sh",
+    "deploy:vercel": "cd frontend/my-aibook && vercel --prod"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"

@@ -14,7 +14,7 @@ const config: Config = {
   },
 
   // ✅ VERCEL PRODUCTION URL
-  url: 'https://december-aibook.vercel.app',
+  url: 'https://localhost',
 
   // ✅ Vercel always uses root
   baseUrl: '/',

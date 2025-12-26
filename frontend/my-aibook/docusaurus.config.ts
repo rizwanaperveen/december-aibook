@@ -2,39 +2,33 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+// This runs in Node.js - Don't use client-side code here
 
 const config: Config = {
   title: 'Embodied AI Systems Book',
   tagline: 'Learn about Robotic Nervous Systems and Digital Twins',
   favicon: 'img/favicon.ico',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
+    v4: true,
   },
 
-  // Set the production url of your site here
-  url: 'https://rizwanaperveen.github.io',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  // ✅ VERCEL PRODUCTION URL
+  url: 'https://december-aibook.vercel.app',
+
+  // ✅ Vercel always uses root
   baseUrl: '/',
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'rizwanaperveen', // Usually your GitHub org/user name.
-  projectName: 'december-aibook', // Usually your repo name.
-  deploymentBranch: 'gh-pages', // The branch to deploy to
-  trailingSlash: false, // Set to false to remove trailing slashes
+  // ❌ GitHub Pages specific config REMOVED
+  // organizationName
+  // projectName
+  // deploymentBranch
 
+  trailingSlash: false,
   onBrokenLinks: 'warn',
 
-  // Static files to be served
   staticDirectories: ['static'],
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -46,10 +40,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/rizwanaperveen/december-aibook/tree/main/',
         },
         blog: {
           showReadingTime: true,
@@ -57,11 +49,8 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
+            'https://github.com/rizwanaperveen/december-aibook/tree/main/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
@@ -74,7 +63,6 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
@@ -108,18 +96,9 @@ const config: Config = {
         {
           title: 'Book Content',
           items: [
-            {
-              label: 'Introduction',
-              to: '/docs/intro',
-            },
-            {
-              label: 'ROS 2 Basics',
-              to: '/docs/ros2-basics',
-            },
-            {
-              label: 'Digital Twins',
-              to: '/docs/digital-twins',
-            },
+            { label: 'Introduction', to: '/docs/intro' },
+            { label: 'ROS 2 Basics', to: '/docs/ros2-basics' },
+            { label: 'Digital Twins', to: '/docs/digital-twins' },
           ],
         },
         {
@@ -137,15 +116,10 @@ const config: Config = {
         },
         {
           title: 'More',
-          items: [
-            {
-              label: 'Blog',
-              to: '/blog',
-            },
-          ],
+          items: [{ label: 'Blog', to: '/blog' }],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Embodied AI Systems Book. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Embodied AI Systems Book.`,
     },
     prism: {
       theme: prismThemes.github,

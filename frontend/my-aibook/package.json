@@ -6,6 +6,7 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "npx docusaurus build",
+    "build:github": "node -e \"require('fs').writeFileSync('docusaurus.config.ts', require('fs').readFileSync('docusaurus.config.ts', 'utf8').replace(/baseUrl: '\\//g, 'baseUrl: \\'/december-aibook/'));process.exit(0);\" && npx docusaurus build && git checkout -- docusaurus.config.ts",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",

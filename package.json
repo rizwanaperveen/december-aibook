@@ -11,7 +11,7 @@
     "populate-db": "cd backend && python populate_db.py",
     "dev": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
     "deploy": "bash deploy.sh",
-    "deploy:vercel": "cd frontend/my-aibook && vercel --prod"
+    "deploy:vercel": "cd frontend/my-aibook && vercel --prod --env DEPLOY_ENV=production"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"
@@ -26,6 +26,6 @@
     "chatbot",
     "education"
   ],
-  "author": "Your Name",
+  "author": "Rizwana Perveen",
   "license": "MIT"
 }

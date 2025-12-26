@@ -14,7 +14,7 @@ const config: Config = {
   },
 
   // ✅ VERCEL PRODUCTION URL
-  url: 'https://localhost',
+  url: 'https://localhost:3000',
 
   // ✅ Vercel always uses root
   baseUrl: '/',
